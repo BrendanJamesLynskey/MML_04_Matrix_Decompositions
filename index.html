@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MML 04 &mdash; Matrix Decompositions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+    <style>
+        :root { --bg-primary:#0a0a0a; --bg-card:#0d1117; --bg-code:#161b22; --text-primary:#e6edf3; --text-secondary:#8b949e; --accent:#a78bfa; --accent-dim:#a78bfa44; --accent-glow:#a78bfa33; --accent-2:#f472b6; --accent-3:#fbbf24; --accent-4:#34d399; --border:#21262d; --font-display:'Space Grotesk',sans-serif; --font-mono:'JetBrains Mono','Fira Code',monospace; --font-body:'Inter',sans-serif; --max-width:900px; }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        html{scroll-behavior:smooth}
+        body{background:var(--bg-primary);color:var(--text-primary);font-family:var(--font-body);font-size:17px;line-height:1.7;overflow-x:hidden}
+        .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:2rem 1.5rem;text-align:center;position:relative}
+        .hero::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:700px;height:600px;background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%);pointer-events:none;z-index:0}
+        .hero>*{position:relative;z-index:1}
+        .series-label{font-family:var(--font-mono);font-size:.85rem;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:1rem}
+        .hero h1{font-family:var(--font-display);font-size:clamp(2rem,5vw,3.2rem);font-weight:700;color:var(--text-primary);line-height:1.2;margin-bottom:1rem}
+        .hero h1 .accent{color:var(--accent)}
+        .hero .subtitle{font-size:1.1rem;color:var(--text-secondary);max-width:640px;margin-bottom:2rem}
+        .tags{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin-bottom:2.5rem}
+        .tag{font-family:var(--font-mono);font-size:.75rem;padding:.25rem .75rem;border-radius:999px;border:1px solid var(--accent);color:var(--accent);background:var(--accent-dim);white-space:nowrap}
+        .pipeline{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:.25rem;margin-bottom:1rem;max-width:var(--max-width)}
+        .pipeline-step{font-family:var(--font-mono);font-size:.7rem;padding:.3rem .7rem;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;color:var(--text-secondary);white-space:nowrap}
+        .pipeline-arrow{color:var(--accent);font-size:.9rem;font-weight:700}
+        .slide{min-height:100vh;max-width:var(--max-width);margin:0 auto;padding:4rem 1.5rem;position:relative;display:flex;flex-direction:column;justify-content:center}
+        .slide-number{font-family:var(--font-display);font-size:5rem;font-weight:700;color:var(--accent-dim);position:absolute;top:2rem;right:1.5rem;line-height:1;user-select:none}
+        .slide h2{font-family:var(--font-display);font-size:1.9rem;font-weight:700;color:var(--accent);margin-bottom:1.5rem;line-height:1.25}
+        .slide h3{font-family:var(--font-display);font-size:1.3rem;font-weight:600;color:var(--text-primary);margin-top:1.5rem;margin-bottom:.75rem}
+        .slide p{margin-bottom:1rem;color:var(--text-secondary)}
+        .slide p strong{color:var(--text-primary)}
+        .slide ul,.slide ol{margin-bottom:1rem;padding-left:1.5rem;color:var(--text-secondary)}
+        .slide li{margin-bottom:.4rem}
+        .slide li strong{color:var(--text-primary)}
+        .slide code{background:var(--bg-code);padding:.1rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.85em;color:var(--accent)}
+        .diagram-grid{display:grid;gap:.75rem;margin:1.5rem 0;padding:1.5rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px}
+        .diagram-grid.cols-2{grid-template-columns:1fr 1fr}
+        .diagram-grid.cols-3{grid-template-columns:1fr 1fr 1fr}
+        .diagram-panel{padding:1rem;background:var(--bg-code);border:1px solid var(--border);border-radius:6px}
+        .diagram-panel.accent-border{border-left:3px solid var(--accent)}
+        .diagram-panel.r{border-left:3px solid var(--accent-2)}
+        .diagram-panel.y{border-left:3px solid var(--accent-3)}
+        .diagram-panel.g{border-left:3px solid var(--accent-4)}
+        .diagram-panel h4{font-family:var(--font-display);font-size:1rem;color:var(--accent);margin-bottom:.5rem}
+        .diagram-panel.r h4{color:var(--accent-2)}
+        .diagram-panel.y h4{color:var(--accent-3)}
+        .diagram-panel.g h4{color:var(--accent-4)}
+        .diagram-panel p,.diagram-panel ul{font-size:.9rem}
+        .callout{background:var(--bg-card);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:1rem 1.25rem;margin:1.25rem 0}
+        .callout p{margin-bottom:0}
+        .callout .callout-label{font-family:var(--font-mono);font-size:.75rem;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem}
+        .canvas-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1rem;margin:1.25rem 0;overflow-x:auto}
+        .canvas-wrap canvas{display:block;margin:0 auto;max-width:100%;image-rendering:pixelated}
+        .control-panel{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin:1.25rem 0}
+        .control-row{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;margin-bottom:.75rem}
+        .control-row label{font-family:var(--font-mono);font-size:.8rem;color:var(--text-secondary);min-width:130px}
+        .control-row input[type="range"]{flex:1;min-width:150px;accent-color:var(--accent)}
+        .control-row .val{font-family:var(--font-mono);font-size:.85rem;color:var(--accent);min-width:80px;text-align:right}
+        .btn{font-family:var(--font-mono);font-size:.8rem;padding:.4rem .9rem;background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);border-radius:4px;cursor:pointer}
+        .btn:hover{background:rgba(167,139,250,.25)}
+        .btn.secondary{background:var(--bg-code);color:var(--text-secondary);border-color:var(--border)}
+        .metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.5rem;margin-top:.75rem}
+        .metric{background:var(--bg-code);border:1px solid var(--border);border-radius:6px;padding:.6rem .8rem;text-align:center}
+        .metric .metric-label{font-family:var(--font-mono);font-size:.7rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.08em}
+        .metric .metric-value{font-family:var(--font-display);font-size:1.25rem;color:var(--accent);font-weight:600;margin-top:.2rem}
+        .contents-list{list-style:none;padding-left:0;counter-reset:contents}
+        .contents-list li{counter-increment:contents;padding:.6rem 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1rem}
+        .contents-list li:last-child{border-bottom:none}
+        .contents-list li::before{content:counter(contents,decimal-leading-zero);font-family:var(--font-mono);font-size:.85rem;color:var(--accent);min-width:2rem}
+        .contents-list a{color:var(--text-primary);text-decoration:none}
+        .contents-list a:hover{color:var(--accent)}
+        .footer{text-align:center;padding:3rem 1.5rem;color:var(--text-secondary);font-size:.85rem;border-top:1px solid var(--border);max-width:var(--max-width);margin:0 auto}
+        .footer a{color:var(--accent);text-decoration:none}
+        .katex{color:var(--text-primary)}
+        .katex-display{margin:1rem 0;overflow-x:auto;overflow-y:hidden}
+        table{width:100%;border-collapse:collapse;font-size:.9rem;margin:1rem 0}
+        th{background:var(--bg-code);color:var(--accent);font-weight:600;text-align:left;padding:.6rem .85rem;border-bottom:1px solid var(--border);font-family:var(--font-display)}
+        td{padding:.5rem .85rem;border-bottom:1px solid var(--border);color:var(--text-secondary);vertical-align:top}
+        tr:last-child td{border-bottom:none}
+        tr:nth-child(even) td{background:rgba(13,17,23,.5)}
+        @media (max-width:640px){.slide{padding:3rem 1rem;min-height:auto}.slide-number{font-size:3rem;top:1.5rem;right:1rem}.slide h2{font-size:1.5rem}.diagram-grid.cols-2,.diagram-grid.cols-3{grid-template-columns:1fr}.hero h1{font-size:1.8rem}}
+    </style>
+</head>
+<body>
+
+<header class="hero">
+    <div class="series-label">Mathematics for Machine Learning &mdash; Deck 04</div>
+    <h1>Matrix <span class="accent">Decompositions</span></h1>
+    <p class="subtitle">Eigenvalues, Cholesky, SVD &mdash; the structure theorems that say "every matrix is, in disguise, something simple".</p>
+
+    <div class="tags">
+        <span class="tag">determinant</span><span class="tag">eigenvalues</span>
+        <span class="tag">spectral</span><span class="tag">Cholesky</span>
+        <span class="tag">SVD</span><span class="tag">Eckart&ndash;Young</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">$\det, \mathrm{tr}$</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">eigen</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">spectral thm</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">SVD</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">low rank</span>
+    </div>
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">Determinant and trace</a></li>
+        <li><a href="#slide-02">Eigenvalues and eigenvectors</a></li>
+        <li><a href="#slide-03">The spectral theorem (symmetric matrices)</a></li>
+        <li><a href="#slide-04">Cholesky factorisation</a></li>
+        <li><a href="#slide-05">The singular value decomposition</a></li>
+        <li><a href="#slide-06">Geometric picture of the SVD</a></li>
+        <li><a href="#slide-07">Eckart&ndash;Young &mdash; the best rank-$k$ approximation</a></li>
+        <li><a href="#slide-08">Interactive: SVD compressor</a></li>
+        <li><a href="#slide-09">The decomposition taxonomy</a></li>
+        <li><a href="#slide-10">Where this lands in Part II</a></li>
+        <li><a href="#slide-11">Cheat sheet</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>Determinant and Trace</h2>
+    <p>Two scalars that summarise a square matrix.</p>
+
+    <h3>Determinant</h3>
+    <p>$\det A$ is the <em>signed volume</em> of the parallelepiped spanned by the columns of $A$. Properties:</p>
+    <ul>
+        <li>$\det(AB) = \det A \cdot \det B$ &mdash; volumes compose.</li>
+        <li>$\det A^\top = \det A$.</li>
+        <li>$\det A = 0$ iff $A$ has linearly dependent columns iff $A$ is non-invertible.</li>
+        <li>$\det A = \prod \lambda_i$ &mdash; the product of (complex) eigenvalues.</li>
+    </ul>
+
+    <h3>Trace</h3>
+    <p>$\mathrm{tr}\, A = \sum_i A_{ii} = \sum_i \lambda_i$ &mdash; the sum of eigenvalues, and also the sum of diagonal entries. The single most useful identity:</p>
+    <p>$$\mathrm{tr}(AB) = \mathrm{tr}(BA) \quad \text{whenever both products are defined.}$$</p>
+    <p>This cyclic property is what makes the trace blind to basis change: $\mathrm{tr}(P^{-1}AP) = \mathrm{tr}(AP P^{-1}) = \mathrm{tr}(A)$.</p>
+
+    <div class="callout">
+        <div class="callout-label">A geometric reading of $\det = \prod\lambda_i$</div>
+        <p>A diagonal matrix with entries $\lambda_i$ scales axis $i$ by $\lambda_i$, so it scales volume by $\prod\lambda_i$. The eigendecomposition (next slide) is a basis change that turns $A$ into exactly such a diagonal &mdash; and basis change preserves volume.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>Eigenvalues and Eigenvectors</h2>
+    <p>For square $A$, a non-zero $\mathbf{v}$ is an <strong>eigenvector</strong> with <strong>eigenvalue</strong> $\lambda$ if</p>
+    <p>$$A\mathbf{v} = \lambda \mathbf{v}.$$</p>
+    <p>$\mathbf{v}$ is a special direction in which $A$ behaves as scalar multiplication.</p>
+
+    <h3>Finding them</h3>
+    <p>$A\mathbf{v} = \lambda\mathbf{v}$ iff $(A - \lambda I)\mathbf{v} = \mathbf{0}$, which has a non-zero solution iff $A - \lambda I$ is singular, i.e.</p>
+    <p>$$\det(A - \lambda I) = 0.$$</p>
+    <p>The left-hand side is the <strong>characteristic polynomial</strong> $\chi_A(\lambda)$, a degree-$n$ polynomial in $\lambda$. Its $n$ roots (counted with multiplicity, over $\mathbb{C}$) are the eigenvalues.</p>
+
+    <h3>Diagonalisation</h3>
+    <p>If $A$ has $n$ linearly independent eigenvectors $\mathbf{v}_1,\dots,\mathbf{v}_n$ with eigenvalues $\lambda_1,\dots,\lambda_n$, stack them as columns of $P$ and put the $\lambda_i$ on the diagonal of $\Lambda$. Then</p>
+    <p>$$A = P\Lambda P^{-1}.$$</p>
+    <p>This is the <strong>eigendecomposition</strong>. Not every matrix has one &mdash; defective matrices fail (eigenvectors don't span).</p>
+
+    <div class="callout">
+        <div class="callout-label">When does it fail?</div>
+        <p>The matrix $\bigl(\begin{smallmatrix}0&amp;1\\0&amp;0\end{smallmatrix}\bigr)$ has $\lambda=0$ with algebraic multiplicity 2 but only one eigenvector (up to scale). The general fix is the <em>Jordan form</em>, which the book doesn't cover and which ML rarely needs &mdash; the SVD on slide 05 sidesteps the issue.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>The Spectral Theorem (Symmetric Matrices)</h2>
+    <p>If $A$ is real and symmetric ($A^\top = A$), then much more is true:</p>
+    <ol>
+        <li>All eigenvalues are real.</li>
+        <li>There exists an <strong>orthonormal</strong> basis of eigenvectors of $A$.</li>
+        <li>Hence $A = Q\Lambda Q^\top$ with $Q$ orthogonal ($Q^\top Q = I$) and $\Lambda$ diagonal.</li>
+    </ol>
+    <p>This is the <strong>spectral theorem</strong>. Geometrically: <em>every symmetric matrix is a stretching along orthogonal axes</em>.</p>
+
+    <h3>Positive (semi-) definite matrices</h3>
+    <ul>
+        <li><strong>PSD</strong> ($A \succeq 0$): $A=A^\top$ and $\mathbf{x}^\top A\mathbf{x}\ge 0$ for all $\mathbf{x}$. Equivalently: all eigenvalues $\ge 0$.</li>
+        <li><strong>PD</strong> ($A \succ 0$): strictly positive. All eigenvalues $&gt; 0$, $A$ invertible.</li>
+    </ul>
+    <p>Every covariance matrix is PSD; every <em>invertible</em> covariance is PD. We'll meet them at every step of decks 06 and 09.</p>
+
+    <h3>The square root</h3>
+    <p>For PSD $A$, define $A^{1/2} = Q\Lambda^{1/2} Q^\top$, where $\Lambda^{1/2}$ takes the square root of each diagonal. Then $A^{1/2}$ is PSD and $(A^{1/2})^2 = A$. The Mahalanobis distance $\mathbf{x}^\top \Sigma^{-1}\mathbf{x}$ becomes $\|\Sigma^{-1/2}\mathbf{x}\|^2$ &mdash; a plain Euclidean length after whitening.</p>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Cholesky Factorisation</h2>
+    <p>If $A$ is symmetric and positive definite there is a unique lower-triangular $L$ with positive diagonal such that</p>
+    <p>$$A = LL^\top.$$</p>
+    <p>This is the <strong>Cholesky factorisation</strong>. It's cheaper than the eigendecomposition (about half the flops of LU) and is the workhorse of Gaussian processes, kernel SVMs and any algorithm that needs to solve $A\mathbf{x}=\mathbf{b}$ with $A$ PD.</p>
+
+    <h3>Sampling from a Gaussian</h3>
+    <p>To sample $\mathbf{x} \sim \mathcal{N}(\mathbf{0}, \Sigma)$, compute the Cholesky $\Sigma = LL^\top$, draw $\mathbf{z}\sim\mathcal{N}(\mathbf{0}, I)$, and return $L\mathbf{z}$. Then $\mathbb{E}[L\mathbf{z}\mathbf{z}^\top L^\top] = LL^\top = \Sigma$ as required. Decks 06 and 11 use this trick.</p>
+
+    <h3>Why "Cholesky" and not "$LDL^\top$"?</h3>
+    <p>You can also write $A = L'DL'^\top$ with $L'$ unit-lower-triangular and $D$ diagonal positive &mdash; numerically equivalent and avoids a square root. Most ML libraries use Cholesky proper because $L$ ends up being directly useful (e.g. for log-determinants: $\log\det A = 2\sum_i \log L_{ii}$).</p>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>The Singular Value Decomposition</h2>
+    <p>Every real $m\times n$ matrix $A$ admits a factorisation</p>
+    <p>$$A = U\Sigma V^\top,$$</p>
+    <p>with $U\in\mathbb{R}^{m\times m}$ orthogonal, $V\in\mathbb{R}^{n\times n}$ orthogonal, and $\Sigma\in\mathbb{R}^{m\times n}$ "diagonal" with non-negative <strong>singular values</strong> $\sigma_1 \ge \sigma_2 \ge \dots \ge 0$ on its main diagonal.</p>
+
+    <h3>Where the pieces come from</h3>
+    <ul>
+        <li>$V$'s columns are an orthonormal eigenvector basis of $A^\top A$;</li>
+        <li>The non-zero $\sigma_i = \sqrt{\lambda_i}$ are the square roots of the non-zero eigenvalues of $A^\top A$;</li>
+        <li>$U$'s columns are an orthonormal eigenvector basis of $AA^\top$.</li>
+    </ul>
+
+    <h3>Two important variants</h3>
+    <ul>
+        <li><strong>Thin / reduced SVD</strong>: $A = U_r \Sigma_r V_r^\top$ with only $r = \min(m,n)$ columns. Same factorisation, less storage.</li>
+        <li><strong>Truncated SVD</strong>: keep only the top $k$ singular values, $A_k = U_k\Sigma_k V_k^\top$. This is the rank-$k$ approximation of slide 07.</li>
+    </ul>
+
+    <div class="callout">
+        <div class="callout-label">SVD vs eigendecomposition</div>
+        <p>The SVD always exists; the eigendecomposition often doesn't. For square symmetric $A\succeq 0$ they coincide. For general rectangular $A$ the SVD is the only structure theorem you've got.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Geometric Picture of the SVD</h2>
+    <p>Read $A = U\Sigma V^\top$ right to left as a sequence of three operations on a vector $\mathbf{x}\in\mathbb{R}^n$:</p>
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel accent-border">
+            <h4>$V^\top$ &mdash; rotate</h4>
+            <p>Express $\mathbf{x}$ in the orthonormal "right" basis $V$. No stretching.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>$\Sigma$ &mdash; stretch axes</h4>
+            <p>Scale coordinate $i$ by $\sigma_i$ (then possibly embed into $\mathbb{R}^m$ if $m\neq n$).</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>$U$ &mdash; rotate</h4>
+            <p>Place the result into the "left" basis $U$ inside $\mathbb{R}^m$.</p>
+        </div>
+    </div>
+
+    <p>So <em>every</em> linear map is, in suitable orthonormal bases on each side, a non-negative diagonal scaling. This is the structural fact behind PCA (deck 10) and behind every "low-rank approximation" used in modern ML.</p>
+
+    <h3>Reading off the four subspaces</h3>
+    <p>If $\sigma_1,\dots,\sigma_r$ are non-zero and $\sigma_{r+1}=\dots=0$:</p>
+    <ul>
+        <li>$\mathrm{Col}(A) = \mathrm{span}(\mathbf{u}_1,\dots,\mathbf{u}_r)$;</li>
+        <li>$\mathrm{Nul}(A) = \mathrm{span}(\mathbf{v}_{r+1},\dots,\mathbf{v}_n)$;</li>
+        <li>$\mathrm{Row}(A) = \mathrm{span}(\mathbf{v}_1,\dots,\mathbf{v}_r)$;</li>
+        <li>$\mathrm{Nul}(A^\top) = \mathrm{span}(\mathbf{u}_{r+1},\dots,\mathbf{u}_m)$.</li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>Eckart&ndash;Young &mdash; the Best Rank-$k$ Approximation</h2>
+    <p>Form $A_k = \sum_{i=1}^k \sigma_i \mathbf{u}_i \mathbf{v}_i^\top = U_k\Sigma_k V_k^\top$ &mdash; the truncated SVD. Then</p>
+    <p>$$A_k = \arg\min_{\mathrm{rank}(B)\le k}\|A - B\|_F = \arg\min_{\mathrm{rank}(B)\le k}\|A - B\|_2.$$</p>
+    <p>In words: $A_k$ is the closest rank-$k$ matrix to $A$ in <em>both</em> the Frobenius (sum of squares) norm and the spectral (largest singular value) norm. The minimum errors are</p>
+    <p>$$\|A - A_k\|_F^2 = \sum_{i=k+1}^{r}\sigma_i^2, \qquad \|A - A_k\|_2 = \sigma_{k+1}.$$</p>
+
+    <div class="callout">
+        <div class="callout-label">Why this is one of the deepest theorems in ML</div>
+        <p>"Compress this object as much as you can while losing as little information as possible" is the single most reused goal in machine learning. PCA, LoRA, KV-cache compression, autoencoders &mdash; they all answer the same question by taking truncated SVDs of one matrix or another. Eckart&ndash;Young tells you the answer is <em>optimal</em>.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>Interactive: SVD Compressor</h2>
+    <p>Below is a 32&times;32 grayscale "image" (a synthetic logo). Slide $k$ from 1 to 32 to keep that many singular values; the right pane shows the truncated reconstruction, the metrics report compression ratio and error.</p>
+
+    <div class="canvas-wrap">
+        <div style="display:flex;gap:1.2rem;flex-wrap:wrap;align-items:center;justify-content:center;">
+            <div style="text-align:center">
+                <canvas id="svd-orig" width="160" height="160"></canvas>
+                <div style="font-family:var(--font-mono);font-size:.75rem;color:var(--text-secondary);margin-top:.4rem">original (rank 32)</div>
+            </div>
+            <div style="text-align:center">
+                <canvas id="svd-recon" width="160" height="160"></canvas>
+                <div style="font-family:var(--font-mono);font-size:.75rem;color:var(--accent);margin-top:.4rem">rank <span id="svd-k">8</span> approximation</div>
+            </div>
+            <div style="text-align:center">
+                <canvas id="svd-spec" width="220" height="160"></canvas>
+                <div style="font-family:var(--font-mono);font-size:.75rem;color:var(--text-secondary);margin-top:.4rem">singular value spectrum</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="svd-slider">rank $k$</label>
+            <input type="range" id="svd-slider" min="1" max="32" value="8">
+            <div class="val" id="svd-k-readout">8</div>
+        </div>
+        <div class="metric-grid">
+            <div class="metric"><div class="metric-label">compression</div><div class="metric-value" id="svd-cr">—</div></div>
+            <div class="metric"><div class="metric-label">‖A−Ak‖_F / ‖A‖_F</div><div class="metric-value" id="svd-err">—</div></div>
+            <div class="metric"><div class="metric-label">energy kept</div><div class="metric-value" id="svd-energy">—</div></div>
+        </div>
+    </div>
+
+    <p>For most natural images the spectrum drops off fast &mdash; you can keep a small fraction of the singular values and still see most of the picture. That observation, applied to the data matrix instead of an image, is exactly PCA (deck 10).</p>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>The Decomposition Taxonomy</h2>
+    <p>The book consolidates everything into table 4.2. Here it is, slightly reshaped, with a "use it for" column added.</p>
+
+    <table>
+        <thead><tr><th>Decomposition</th><th>Form</th><th>When it exists</th><th>Use it for</th></tr></thead>
+        <tbody>
+            <tr><td>LU</td><td>$A = LU$ ($L$ lower-, $U$ upper-triangular)</td><td>$A$ square, no zero pivots</td><td>Solving $A\mathbf{x}=\mathbf{b}$</td></tr>
+            <tr><td>QR</td><td>$A = QR$ ($Q$ orthogonal, $R$ upper-triangular)</td><td>Always for full-column-rank $A$</td><td>Numerically stable least squares</td></tr>
+            <tr><td>Cholesky</td><td>$A = LL^\top$</td><td>$A$ symmetric PD</td><td>Solving with PD $A$; sampling from $\mathcal{N}(\mathbf{0},\Sigma)$</td></tr>
+            <tr><td>Eigendecomposition</td><td>$A = P\Lambda P^{-1}$</td><td>$A$ has $n$ independent eigenvectors</td><td>Power iteration, dynamical systems</td></tr>
+            <tr><td>Spectral (symmetric eigen)</td><td>$A = Q\Lambda Q^\top$</td><td>$A$ symmetric</td><td>PCA, whitening, principal axes</td></tr>
+            <tr><td>SVD</td><td>$A = U\Sigma V^\top$</td><td>Always</td><td>Best low-rank approx, pseudoinverse</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="slide" id="slide-10">
+    <div class="slide-number">10</div>
+    <h2>Where This Lands in Part II</h2>
+    <table>
+        <thead><tr><th>Concept</th><th>Used by</th><th>Where</th></tr></thead>
+        <tbody>
+            <tr><td>Eigendecomposition of covariance</td><td>PCA (ch. 10)</td><td>Principal components are the eigenvectors of $\frac{1}{N}X^\top X$</td></tr>
+            <tr><td>Spectral theorem &mdash; PSD inverse</td><td>GMM (ch. 11), linear regression (ch. 9)</td><td>Inverting covariance via eigen reciprocal</td></tr>
+            <tr><td>Cholesky</td><td>GMM, GP regression</td><td>Sampling $\mathcal{N}(\boldsymbol\mu,\Sigma)$; stable log-det</td></tr>
+            <tr><td>SVD</td><td>PCA, low-rank decompositions everywhere</td><td>PCA via SVD of $X$ skips forming $X^\top X$</td></tr>
+            <tr><td>Eckart&ndash;Young</td><td>Compression, LoRA, KV-cache</td><td>Optimal truncated representation</td></tr>
+            <tr><td>Determinant / trace</td><td>GMM (ch. 11)</td><td>Gaussian log-density: $-\tfrac12\log\det(2\pi\Sigma)-\tfrac12(\mathbf{x}-\boldsymbol\mu)^\top\Sigma^{-1}(\mathbf{x}-\boldsymbol\mu)$</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="slide" id="slide-11">
+    <div class="slide-number">11</div>
+    <h2>Cheat Sheet</h2>
+    <table>
+        <thead><tr><th>Object</th><th>Formula</th></tr></thead>
+        <tbody>
+            <tr><td>$\det A$</td><td>$\prod_i \lambda_i$ &mdash; signed volume scaling</td></tr>
+            <tr><td>$\mathrm{tr}\, A$</td><td>$\sum_i A_{ii} = \sum_i \lambda_i$</td></tr>
+            <tr><td>Characteristic polynomial</td><td>$\chi_A(\lambda) = \det(A-\lambda I)$</td></tr>
+            <tr><td>Eigendecomposition</td><td>$A = P\Lambda P^{-1}$</td></tr>
+            <tr><td>Spectral theorem</td><td>$A = Q\Lambda Q^\top$ for symmetric $A$</td></tr>
+            <tr><td>Cholesky</td><td>$A = LL^\top$, $A$ PD</td></tr>
+            <tr><td>SVD</td><td>$A = U\Sigma V^\top$</td></tr>
+            <tr><td>$\sigma_i^2$</td><td>eigenvalues of $A^\top A$</td></tr>
+            <tr><td>Pseudoinverse</td><td>$A^+ = V \Sigma^+ U^\top$ &mdash; reciprocal non-zero singular values</td></tr>
+            <tr><td>Eckart&ndash;Young error</td><td>$\|A-A_k\|_F^2 = \sum_{i&gt;k} \sigma_i^2$</td></tr>
+        </tbody>
+    </table>
+    <div class="callout">
+        <div class="callout-label">Up next</div>
+        <p>Deck 05 returns to differentiation &mdash; gradients, Jacobians and the chain rule on a DAG (i.e. backpropagation). With Part I almost complete we're ready to start training models.</p>
+    </div>
+</section>
+
+<footer class="footer">
+    <p><strong>Book:</strong> Deisenroth, Faisal &amp; Ong, <em>Mathematics for Machine Learning</em> &mdash; Cambridge University Press, 2020, chapter 4.<br>Free PDF: <a href="https://mml-book.github.io/book/mml-book.pdf">mml-book.github.io/book/mml-book.pdf</a></p>
+    <p style="margin-top:.6rem"><a href="https://brendanjameslynskey.github.io/MML_Hub/">&larr; All decks</a> &middot; <a href="https://brendanjameslynskey.github.io/MML_03_Analytic_Geometry/">prev (03)</a> &middot; <a href="https://brendanjameslynskey.github.io/MML_05_Vector_Calculus/">next (05) &rarr;</a></p>
+</footer>
+
+<script>
+// SVD compressor: build a synthetic 32x32 "image", compute SVD via Jacobi on A^T A
+(function(){
+    const N = 32;
+
+    // --- build a simple synthetic image: gradients + a few rectangles + a sin wave
+    function buildImage() {
+        const img = new Float64Array(N*N);
+        for (let i=0;i<N;i++) for (let j=0;j<N;j++) {
+            let v = 0.5 + 0.4*Math.sin((i+j)*0.7) - 0.3*Math.cos((i-j)*0.5);
+            // central block
+            if (i>=10 && i<=22 && j>=10 && j<=22) v += 0.5;
+            // diagonal stripe
+            if (Math.abs(i-j) < 2) v -= 0.4;
+            // top bar
+            if (i < 4) v += 0.2;
+            img[i*N+j] = v;
+        }
+        // normalise to [0,1]
+        let lo=Infinity, hi=-Infinity;
+        for (let k=0;k<img.length;k++){lo=Math.min(lo,img[k]); hi=Math.max(hi,img[k]);}
+        const span = hi-lo || 1;
+        for (let k=0;k<img.length;k++) img[k] = (img[k]-lo)/span;
+        return img;
+    }
+
+    // --- compute SVD of an N x N real matrix via Jacobi rotations applied to A on the right
+    // Returns {U, S, V} where A = U diag(S) V^T (U,V are NxN, S length N)
+    function svd(A) {
+        // Working copy of A as U-to-be (left singular columns)
+        const Aw = new Float64Array(A);
+        const V = new Float64Array(N*N);
+        for (let i=0;i<N;i++) V[i*N+i] = 1;
+        const tol = 1e-9;
+        const maxSweeps = 40;
+        for (let sweep=0; sweep<maxSweeps; sweep++) {
+            let off = 0;
+            for (let p=0;p<N-1;p++) {
+                for (let q=p+1;q<N;q++) {
+                    // compute alpha = a_p . a_p, beta = a_q . a_q, gamma = a_p . a_q
+                    let alpha = 0, beta = 0, gamma = 0;
+                    for (let i=0;i<N;i++) {
+                        const ap = Aw[i*N+p], aq = Aw[i*N+q];
+                        alpha += ap*ap; beta += aq*aq; gamma += ap*aq;
+                    }
+                    off += Math.abs(gamma);
+                    if (Math.abs(gamma) < tol*Math.sqrt(alpha*beta)+tol) continue;
+                    // Jacobi rotation angle (Brent-Luk)
+                    const zeta = (beta - alpha)/(2*gamma);
+                    const t = (zeta >= 0 ? 1 : -1) / (Math.abs(zeta) + Math.sqrt(1 + zeta*zeta));
+                    const c = 1/Math.sqrt(1+t*t);
+                    const s = c*t;
+                    // apply to columns p and q of Aw
+                    for (let i=0;i<N;i++) {
+                        const ap = Aw[i*N+p], aq = Aw[i*N+q];
+                        Aw[i*N+p] = c*ap - s*aq;
+                        Aw[i*N+q] = s*ap + c*aq;
+                    }
+                    // accumulate V
+                    for (let i=0;i<N;i++) {
+                        const vp = V[i*N+p], vq = V[i*N+q];
+                        V[i*N+p] = c*vp - s*vq;
+                        V[i*N+q] = s*vp + c*vq;
+                    }
+                }
+            }
+            if (off < tol) break;
+        }
+        // extract singular values and normalise U columns
+        const S = new Float64Array(N);
+        const U = new Float64Array(N*N);
+        for (let p=0;p<N;p++) {
+            let sumsq = 0;
+            for (let i=0;i<N;i++) sumsq += Aw[i*N+p]*Aw[i*N+p];
+            const sigma = Math.sqrt(sumsq);
+            S[p] = sigma;
+            if (sigma > 1e-12) {
+                for (let i=0;i<N;i++) U[i*N+p] = Aw[i*N+p]/sigma;
+            } else {
+                for (let i=0;i<N;i++) U[i*N+p] = (i===p) ? 1 : 0;
+            }
+        }
+        // sort by decreasing singular value
+        const order = Array.from({length: N}, (_, i) => i).sort((a,b) => S[b] - S[a]);
+        const Us = new Float64Array(N*N), Vs = new Float64Array(N*N), Ss = new Float64Array(N);
+        for (let newi=0;newi<N;newi++) {
+            const old = order[newi];
+            Ss[newi] = S[old];
+            for (let i=0;i<N;i++) { Us[i*N+newi] = U[i*N+old]; Vs[i*N+newi] = V[i*N+old]; }
+        }
+        return {U: Us, S: Ss, V: Vs};
+    }
+
+    function reconstruct(U, S, V, k) {
+        const out = new Float64Array(N*N);
+        for (let r=0;r<k;r++) {
+            const s = S[r];
+            for (let i=0;i<N;i++) {
+                const ui = U[i*N+r] * s;
+                for (let j=0;j<N;j++) {
+                    out[i*N+j] += ui * V[j*N+r];
+                }
+            }
+        }
+        return out;
+    }
+
+    function drawImage(canvasId, img) {
+        const c = document.getElementById(canvasId);
+        const ctx = c.getContext('2d');
+        const cw = c.width, ch = c.height;
+        const cell = cw / N;
+        const imageData = ctx.createImageData(cw, ch);
+        for (let py=0; py<ch; py++) {
+            const i = Math.min(N-1, Math.floor(py/cell));
+            for (let px=0; px<cw; px++) {
+                const j = Math.min(N-1, Math.floor(px/cell));
+                const v = Math.max(0, Math.min(1, img[i*N+j]));
+                const k = (py*cw + px)*4;
+                imageData.data[k]   = Math.round(v*230 + 25*v);
+                imageData.data[k+1] = Math.round(v*200 + 40*v);
+                imageData.data[k+2] = Math.round(v*255);
+                imageData.data[k+3] = 255;
+            }
+        }
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    function drawSpectrum(canvasId, S, k) {
+        const c = document.getElementById(canvasId);
+        const ctx = c.getContext('2d');
+        const W = c.width, H = c.height;
+        ctx.fillStyle = '#0d1117'; ctx.fillRect(0,0,W,H);
+        const pad = 14;
+        const maxS = S[0] || 1;
+        const barW = (W - 2*pad) / N;
+        for (let i=0;i<N;i++) {
+            const h = (S[i]/maxS) * (H - 2*pad);
+            const x = pad + i*barW;
+            ctx.fillStyle = (i < k) ? '#a78bfa' : '#21262d';
+            ctx.fillRect(x, H - pad - h, barW - 1, h);
+        }
+        // axis labels
+        ctx.fillStyle = '#8b949e';
+        ctx.font = '10px JetBrains Mono, monospace';
+        ctx.fillText('σ_i', 6, 12);
+        ctx.fillText('1', pad - 4, H - 2);
+        ctx.fillText(String(N), W - pad - 12, H - 2);
+        // marker line at k
+        const mx = pad + k*barW - 0.5;
+        ctx.strokeStyle = '#f472b6'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(mx, pad); ctx.lineTo(mx, H-pad); ctx.stroke();
+    }
+
+    const A = buildImage();
+    drawImage('svd-orig', A);
+    const {U, S, V} = svd(A);
+    let frobAsq = 0;
+    for (let k=0;k<N;k++) frobAsq += S[k]*S[k];
+
+    const slider = document.getElementById('svd-slider');
+    function update() {
+        const k = parseInt(slider.value, 10);
+        document.getElementById('svd-k').textContent = k;
+        document.getElementById('svd-k-readout').textContent = k;
+        const recon = reconstruct(U, S, V, k);
+        drawImage('svd-recon', recon);
+        drawSpectrum('svd-spec', S, k);
+        // metrics: compression ratio is (storage of truncated SVD) / (storage of full matrix)
+        // storage of full: N*N. storage of trunc: k*(N+N+1).
+        const full = N*N;
+        const trunc = k*(2*N + 1);
+        document.getElementById('svd-cr').textContent = (full/trunc).toFixed(2) + '×';
+        // relative Frobenius error
+        let leftSq = 0; for (let i=k;i<N;i++) leftSq += S[i]*S[i];
+        document.getElementById('svd-err').textContent = Math.sqrt(leftSq/frobAsq).toFixed(3);
+        document.getElementById('svd-energy').textContent = ((1 - leftSq/frobAsq)*100).toFixed(1) + '%';
+    }
+    slider.addEventListener('input', update);
+    update();
+})();
+</script>
+
+</body>
+</html>
